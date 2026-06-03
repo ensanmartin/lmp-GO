@@ -1,0 +1,2 @@
+simulation_name         test ! output files will carry this name + their
+remove_CoM_vel          500 ! remove the trans. & rot. vel around the

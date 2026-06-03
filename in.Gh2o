@@ -1,0 +1,29 @@
+units       real
+dimension   3
+atom_style  charge
+boundary    p p p
+
+read_data ./Molecules/GO.lmpdat
+
+mass 1 12.0107       # C
+mass 2 15.9994       # O
+mass 3  1.0079       # H
+
+pair_style          reaxff ./ReaxFF/controlfile.reax
+# en orden del ID
+pair_coeff          * * ./ReaxFF/TiOCHNCl.ff C O H
+fix                 1 all qeq/reaxff 1 0.0 10.0 1.0e-6 reaxff
+
+molecule        water ./Molecules/water.lmpdat
+create_atoms    0 random 1850 12345 NULL mol water 54321 overlap 1.5 maxtry 100
+
+thermo          10
+thermo_style    custom step temp etotal pe ke press
+dump            mydmp all custom 100 Gh2o_dump.lammpstrj id type q x y z
+
+velocity    all create 1.0 123456 dist gaussian mom yes rot yes
+fix         simnve all nve
+# unidades reales: femtosegundo
+#timestep 0.25, > provoca comportamiento errático
+timestep    0.25
+run         500
