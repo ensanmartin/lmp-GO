@@ -2,6 +2,9 @@ units       real
 dimension   3
 atom_style  charge
 boundary    p p p
+# unidades reales: femtosegundo
+#timestep 0.25, > provoca comportamiento errático
+timestep    0.25
 
 read_data ./Molecules/GO.lmpdat
 
@@ -15,15 +18,32 @@ pair_coeff          * * ./ReaxFF/TiOCHNCl.ff C O H
 fix                 1 all qeq/reaxff 1 0.0 10.0 1.0e-6 reaxff
 
 molecule        water ./Molecules/water.lmpdat
+#create_atoms    0 random 1850 12345 NULL mol water 54321 overlap 1.5 maxtry 100
 create_atoms    0 random 1850 12345 NULL mol water 54321 overlap 1.5 maxtry 100
 
-thermo          10
-thermo_style    custom step temp etotal pe ke press
+thermo          100
+thermo_style    custom step temp etotal pe ke press vol density
 dump            mydmp all custom 100 Gh2o_dump.lammpstrj id type q x y z
 
-velocity    all create 1.0 123456 dist gaussian mom yes rot yes
-fix         simnve all nve
-# unidades reales: femtosegundo
-#timestep 0.25, > provoca comportamiento errático
-timestep    0.25
-run         500
+# probar T=300KsS
+#velocity    all create 1.0 123456 dist gaussian mom yes rot yes
+minimize        1.0e-4 1.0e-6 5000 10000
+velocity    all create 1 123456 dist gaussian mom yes rot yes
+
+# -------------------------------
+# |             NPT             |
+# -------------------------------
+fix         eqNPT all nve
+# TERMOSTATO: llevar de 300 K a 300 K en 100 fs
+fix         eqrelaxT all temp/berendsen 300 300 100
+# BAROSTATO: llevar de presión isotrópica 1 atm a 1 atm en 1000 fs
+fix         eqP all press/berendsen iso 1 1 1000
+# 1 ns -> 4000000
+run         1000
+
+# -------------------------------
+# |             NVT             |
+# -------------------------------
+unfix         eqP
+# 1 ns -> 4000000
+run           1000

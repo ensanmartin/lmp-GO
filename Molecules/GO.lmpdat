@@ -7,12 +7,6 @@ LAMMPS data file
 -20.0 20.0 ylo yhi
 -20.0 20.0 zlo zhi
 
-Masses
-
-1 12.0107  # C
-2 15.9994  # O
-3 1.00794  # H
-
 Atoms  # charge
 
 1 1 0.0 -14.3429 10.5091 -0.164025

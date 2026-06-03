@@ -3,18 +3,9 @@ LAMMPS data file
 264 atoms
 1 atom types
 
-#40.0 0.0 0.0 avec
-#0.0 40.0 0.0 bvec
-#0.0 0.0 40.0 cvec
-#-20.0 -20.0 -20.0 abc origin
-
 -20.0 20.0 xlo xhi
 -20.0 20.0 ylo yhi
 -20.0 20.0 zlo zhi
-
-#Masses
-
-#1 12.0107  # C
 
 Atoms  # molecular
 
