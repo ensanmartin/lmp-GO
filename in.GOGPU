@@ -6,31 +6,44 @@ boundary    p p p
 #timestep 0.25, > provoca comportamiento errático
 timestep    0.25
 
-read_data ./Molecules/GO.lmpdat
+package kokkos neigh half neigh/qeq half newton on
 
-mass 1 12.0107       # C
-mass 2 15.9994       # O
-mass 3  1.0079       # H
+read_data GO_UFF.lmpdat extra/atom/types 2
 
-pair_style          reaxff ./ReaxFF/controlfile.reax
+mass    1   12.0107       # C
+mass    2   15.9994       # O
+mass    3    1.0079       # H
+mass    4   22.9898       # Na
+mass    5   35.4500       # Cl
+
+set type    4   charge 1.0
+set type    5   charge -1.0
+
+pair_style          reaxff/kk controlfile.reax
 # en orden del ID
-pair_coeff          * * ./ReaxFF/TiOCHNCl.ff C O H
-fix                 1 all qeq/reaxff 1 0.0 10.0 1.0e-6 reaxff
+pair_coeff          * * TiOCHNCl.ff C O H Na Cl
+fix                 1 all qeq/reaxff 1 0.0 10.0 1.0e-4 reaxff
 
-molecule        water ./Molecules/water.lmpdat
-#create_atoms    0 random 1850 12345 NULL mol water 54321 overlap 1.5 maxtry 100
+molecule        water water.lmpdat
 create_atoms    0 random 1850 12345 NULL mol water 54321 overlap 1.5 maxtry 100
+# Na+
+create_atoms    4 random 38 54321 NULL overlap 1.5 maxtry 1000
+# Cl-
+create_atoms    5 random 38 54321 NULL overlap 1.5 maxtry 1000
 
-thermo          100
+thermo          1000
 thermo_style    custom step temp etotal pe ke press vol density
-dump            mydmp all custom 100 Gh2o_dump.lammpstrj id type q x y z
+dump            mydmp all custom 100 GO_dump.lammpstrj id type q x y z
 
 
 # ----------------------------------------
 # |             MINIMIZACION             |
 # ----------------------------------------
 minimize        1.0e-6 1.0e-8 10000 20000
-#velocity    all create 1.0 123456 dist gaussian mom yes rot yes
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+
 velocity        all create 300 123456 dist gaussian mom yes rot yes
 
 fix             eqNVE all nve
@@ -47,7 +60,7 @@ run             5000
 # BAROSTATO: llevar de presión isotrópica 1 atm a 1 atm en 1000 fs con modulo de incompresibilidad de 22000 atm
 fix         eqP all press/berendsen iso 1 1 1000 modulus 22000
 # 1 ns -> 4000000
-run         1000
+run         950000
 
 
 # -------------------------------
@@ -55,4 +68,12 @@ run         1000
 # -------------------------------
 unfix         eqP
 # 1 ns -> 4000000
-run           1000
+
+dump            msd_dump all custom 1000 msd.lammpstrj id type xu yu zu
+
+run           1000000
+
+undump          mydmp
+dump            vacf_dump all custom 4 velocities.lammpstrj id q x y z vx vy vz
+
+run             50000
