@@ -1,0 +1,37 @@
+package kokkos neigh half neigh/qeq half newton on
+
+read_restart    restart.A.rst
+
+pair_style      reaxff/kk controlfile.reax
+pair_coeff      * * TiOCHNCl.ff C O H Na Cl
+fix             1 all qeq/reaxff 1 0.0 10.0 1.0e-4 reaxff
+
+timestep        0.25
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+
+thermo          1000
+thermo_style    custom step temp etotal pe ke press vol density
+thermo_modify   flush yes
+
+restart         25000 restart.*.rst
+
+dump            mydmp all custom 100 GO_dump.lammpstrj id type q x y z
+dump_modify     mydmp append yes
+
+fix             eqNVE all nve
+fix             eqT all temp/berendsen 300.0 300.0 100.0
+fix             eqP all press/berendsen iso 1 1 1000 modulus 22000
+
+run             100000
+
+unfix           eqP
+
+dump            msd_dump all custom 1000 msd.lammpstrj id type xu yu zu
+
+run             250000
+
+undump          mydmp
+dump            vacf_dump all custom 4 velocities.lammpstrj id q x y z vx vy vz
+
+run             50000

@@ -1,9 +1,11 @@
+# este input script y los correspondientes restarts requieren que los archivos de Molecules y ReaxFF
+# se encuentren en el mismo directorio que los inputs.
+# alternativamente, se pueden reescribir todas las rutas de los archivos en estos scripts :)
+
 units       real
 dimension   3
 atom_style  charge
 boundary    p p p
-# unidades reales: femtosegundo
-#timestep 0.25, > provoca comportamiento errático
 timestep    0.25
 
 package kokkos neigh half neigh/qeq half newton on
@@ -16,8 +18,8 @@ mass    3    1.0079       # H
 mass    4   22.9898       # Na
 mass    5   35.4500       # Cl
 
-set type    4   charge 1.0
-set type    5   charge -1.0
+set     type    4   charge   1
+set     type    5   charge  -1
 
 pair_style          reaxff/kk controlfile.reax
 # en orden del ID
@@ -33,8 +35,11 @@ create_atoms    5 random 38 54321 NULL overlap 1.5 maxtry 1000
 
 thermo          1000
 thermo_style    custom step temp etotal pe ke press vol density
+thermo_modify   flush yes
+
 dump            mydmp all custom 100 GO_dump.lammpstrj id type q x y z
 
+restart 25000 restart.*.rst
 
 # ----------------------------------------
 # |             MINIMIZACION             |
@@ -46,32 +51,28 @@ neigh_modify    every 1 delay 0 check yes
 
 velocity        all create 300 123456 dist gaussian mom yes rot yes
 
-fix             eqNVE all nve
-fix             eqT all temp/berendsen 300.0 300.0 100.0
-
-run             5000
 
 # -------------------------------
 # |             NPT             |
 # -------------------------------
-#fix         eqNPT all nve
+fix             eqNVE all nve
 # TERMOSTATO: llevar de 300 K a 300 K en 100 fs
-#fix         eqrelaxT all temp/berendsen 300 300 100
+fix             eqT all temp/berendsen 300.0 300.0 100.0
+run             5000
+
 # BAROSTATO: llevar de presión isotrópica 1 atm a 1 atm en 1000 fs con modulo de incompresibilidad de 22000 atm
 fix         eqP all press/berendsen iso 1 1 1000 modulus 22000
-# 1 ns -> 4000000
-run         950000
+run         200000
 
 
 # -------------------------------
 # |             NVT             |
 # -------------------------------
 unfix         eqP
-# 1 ns -> 4000000
 
 dump            msd_dump all custom 1000 msd.lammpstrj id type xu yu zu
 
-run           1000000
+run           250000
 
 undump          mydmp
 dump            vacf_dump all custom 4 velocities.lammpstrj id q x y z vx vy vz
